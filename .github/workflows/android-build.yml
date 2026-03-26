@@ -41,3 +41,42 @@ jobs:
           name: bazi-app-debug
           path: android/app/build/outputs/apk/debug/app-debug.apk
           retention-days: 30
+      
+      - name: Send Email with APK
+        uses: dawidd6/action-send-mail@v3
+        with:
+          server_address: smtp.qq.com
+          server_port: 465
+          username: ${{ secrets.EMAIL_USERNAME }}
+          password: ${{ secrets.EMAIL_PASSWORD }}
+          subject: "🔮 九星八字排盘 APK 构建完成 - ${{ github.run_id }}"
+          body: |
+            您好！
+            
+            九星八字排盘 Android APK 已构建完成。
+            
+            【构建信息】
+            - 项目：九星八字排盘
+            - 版本：v1.0.0
+            - 构建时间：${{ github.event.head_commit.timestamp }}
+            - 提交信息：${{ github.event.head_commit.message }}
+            - 构建编号：${{ github.run_id }}
+            
+            【下载方式】
+            1. 直接下载本邮件附件中的 APK 文件
+            2. 或访问 GitHub Actions 下载：${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+            
+            【安装说明】
+            1. 将 APK 文件传输到 Android 手机
+            2. 点击安装（可能需要允许"未知来源"）
+            3. 安装完成后即可使用
+            
+            祝使用愉快！
+            
+            ---
+            九星八字排盘 · 专业命理分析工具
+          to: 315024345@qq.com
+          from: GitHub Actions <${{ secrets.EMAIL_USERNAME }}>
+          attachments: android/app/build/outputs/apk/debug/app-debug.apk
+          convert_markdown: true
+          priority: high
