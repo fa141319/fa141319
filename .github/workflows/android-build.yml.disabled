@@ -1,0 +1,54 @@
+name: Build Android APK
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Build Next.js
+        run: npm run build
+      
+      - name: Sync Capacitor
+        run: |
+          echo "Starting Capacitor sync..."
+          npx cap sync android
+          echo "Capacitor sync completed"
+          echo "Checking android directory structure:"
+          ls -la android/
+          ls -la android/app/
+          cat android/app/build.gradle | head -20
+      
+      - name: Build APK
+        run: |
+          cd android
+          echo "Running Gradle build..."
+          ./gradlew assembleDebug --stacktrace --info
+        env:
+          GRADLE_OPTS: "-Xmx4g -XX:MaxMetaspaceSize=512m"
+      
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: bazi-app-debug
+          path: android/app/build/outputs/apk/debug/app-debug.apk
+          retention-days: 30
