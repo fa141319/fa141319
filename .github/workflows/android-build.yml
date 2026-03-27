@@ -9,10 +9,6 @@ jobs:
   build:
     runs-on: ubuntu-latest
     
-    env:
-      ANDROID_HOME: /usr/local/lib/android/sdk
-      ANDROID_SDK_ROOT: /usr/local/lib/android/sdk
-
     steps:
       - uses: actions/checkout@v4
       
@@ -20,61 +16,29 @@ jobs:
         with:
           node-version: '20'
           
-      - uses: actions/setup-java@v4
+      - name: Setup Java
+        uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
           java-version: '17'
       
-      # 配置 Android SDK
-      - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
-      
-      # 接受 Android licenses
-      - name: Accept Android licenses
-        run: |
-          yes | sdkmanager --licenses || true
-      
-      # 安装必要的 Android SDK 组件
-      - name: Install Android SDK components
-        run: |
-          sdkmanager "platform-tools" "platforms;android-34" "build-tools;34.0.0"
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
       
       - name: Install dependencies
         run: npm ci
       
       - name: Build Next.js
         run: npm run build
-        env:
-          NODE_OPTIONS: "--max-old-space-size=4096"
-      
-      - name: Verify Next.js build
-        run: |
-          echo "Checking out/ directory..."
-          ls -la out/ || echo "out/ directory not found!"
-          echo "Build output size: $(du -sh out/ 2>/dev/null || echo 'N/A')"
       
       - name: Sync Capacitor
-        run: |
-          echo "Starting Capacitor sync..."
-          npx cap sync android 2>&1 || {
-            echo "Capacitor sync failed!"
-            exit 1
-          }
-          echo "Capacitor sync completed"
-          echo "Checking android/ directory..."
-          ls -la android/ || echo "android/ directory not found!"
+        run: npx cap sync android
       
-      - name: Build Debug APK
-        run: |
-          cd android
-          echo "Current directory: $(pwd)"
-          echo "ANDROID_HOME=$ANDROID_HOME"
-          echo "JAVA_HOME=$JAVA_HOME"
-          echo "Gradle wrapper exists: $(test -f gradlew && echo 'yes' || echo 'no')"
-          ls -la
-          ./gradlew assembleDebug --stacktrace
-        env:
-          GRADLE_OPTS: "-Xmx4g -XX:MaxMetaspaceSize=512m"
+      - name: Build APK with Gradle
+        uses: gradle/gradle-build-action@v3
+        with:
+          arguments: assembleDebug
+          build-root-directory: android
       
       - name: Upload APK
         uses: actions/upload-artifact@v4
