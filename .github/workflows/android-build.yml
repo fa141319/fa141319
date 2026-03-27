@@ -49,20 +49,28 @@ jobs:
       
       - name: Verify Next.js build
         run: |
-          ls -la out/
-          echo "Build output size: $(du -sh out/)"
+          echo "Checking out/ directory..."
+          ls -la out/ || echo "out/ directory not found!"
+          echo "Build output size: $(du -sh out/ 2>/dev/null || echo 'N/A')"
       
       - name: Sync Capacitor
         run: |
-          npx cap sync android
+          echo "Starting Capacitor sync..."
+          npx cap sync android 2>&1 || {
+            echo "Capacitor sync failed!"
+            exit 1
+          }
           echo "Capacitor sync completed"
-          ls -la android/
+          echo "Checking android/ directory..."
+          ls -la android/ || echo "android/ directory not found!"
       
       - name: Build Debug APK
         run: |
           cd android
+          echo "Current directory: $(pwd)"
           echo "ANDROID_HOME=$ANDROID_HOME"
           echo "JAVA_HOME=$JAVA_HOME"
+          echo "Gradle wrapper exists: $(test -f gradlew && echo 'yes' || echo 'no')"
           ls -la
           ./gradlew assembleDebug --stacktrace
         env:
