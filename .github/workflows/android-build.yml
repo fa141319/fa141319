@@ -47,19 +47,23 @@ jobs:
         env:
           NODE_OPTIONS: "--max-old-space-size=4096"
       
-      - name: Sync Capacitor
-        run: npx cap sync android
-      
-      - name: Debug Gradle
+      - name: Verify Next.js build
         run: |
+          ls -la out/
+          echo "Build output size: $(du -sh out/)"
+      
+      - name: Sync Capacitor
+        run: |
+          npx cap sync android
+          echo "Capacitor sync completed"
           ls -la android/
-          cat android/gradle/wrapper/gradle-wrapper.properties
       
       - name: Build Debug APK
         run: |
           cd android
           echo "ANDROID_HOME=$ANDROID_HOME"
           echo "JAVA_HOME=$JAVA_HOME"
+          ls -la
           ./gradlew assembleDebug --stacktrace
         env:
           GRADLE_OPTS: "-Xmx4g -XX:MaxMetaspaceSize=512m"
